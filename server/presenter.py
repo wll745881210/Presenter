@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# from pylab import *
+from pylab import *
 from time       import sleep
-import lightblue as bt
+import bluetooth as bt
 
 ############################################################
 
@@ -54,15 +54,24 @@ class slide_presenter_basic:
 
 def test_bluetooth(  ):
     addr = 'F8:8F:CA:11:E9:59';
-    # svc_dicts = bt.findservices\
-    #             ( addr = addr,
-    #               name = 'btprt' );
-    # port = svc_dicts[ 0 ][ 'port' ];
-    s = bt.socket( bt.RFCOMM );
-    s.connect( ( addr, 0 ) );
 
-    for i in range( 100 ):
-        s.send( str( i ) );
+    s = bt.BluetoothSocket( bt.RFCOMM );
+    
+    svc_dicts = bt.find_service\
+                ( address = addr,
+                  name = 'btprt' );
+    port = svc_dicts[ 0 ][ 'port' ];
+
+    s.connect( ( addr, port ) );
+
+    for i in arange( 5 ):
+        a = '';
+        with open( 'example_png/%d.png' % i, 'rb' ) as f:
+            a = f.read(  );
+        #
+        s.send( 'H' );
+        s.send( a );
+        print len( a );
         sleep( 2 );
     #
 
