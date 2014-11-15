@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -40,7 +39,6 @@ public class BluetoothReceiver extends Thread
 
     private void listen(  )
     {
-        Bundle bundle = new Bundle(  );
 
         try
         {
@@ -61,7 +59,6 @@ public class BluetoothReceiver extends Thread
                             ( iStream_fig );
                     msg.what = 738;
                     msg.obj  = img;
-                    msg.setData( bundle );
                     bt_broadcaster.sendMessage( msg );
                 }
             }
