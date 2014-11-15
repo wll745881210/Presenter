@@ -2,12 +2,13 @@ package edu.princeton.presenterclient;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -47,29 +48,21 @@ public class BluetoothReceiver extends Thread
                     listenUsingRfcommWithServiceRecord
                             ( PROTOCOL_SCHEME_RFCOMM, uuid );
             BluetoothSocket socket =  server_socket.accept(  );
-            Log.i("BTPRT", "Server sockect (re)started.");
+            Log.i("btprt", "Server sockect (re)started.");
             if( socket != null )
             {
-                InputStream inputStream
+                InputStream iStream_fig
                         = socket.getInputStream(  );
-                final byte[  ] buffer = new byte[ 2048 ];
-                while( inputStream.read( buffer ) > -1 )
-                {
 
-                    String s;
-                    try
-                    {
-                        s = new String( buffer, "UTF-8" );
-                        bundle.putString("btprt", s);
-                        Message msg = Message.obtain(  );
-                        msg.what = 738;
-                        msg.setData( bundle );
-                        bt_broadcaster.sendMessage( msg );
-                    }
-                    catch( UnsupportedEncodingException e )
-                    {
-                        Log.e( "btprt", "", e );
-                    }
+                while( iStream_fig.read( ) > -1 )
+                {
+                    Message msg = Message.obtain(  );
+                    Bitmap img = BitmapFactory.decodeStream
+                            ( iStream_fig );
+                    msg.what = 738;
+                    msg.obj  = img;
+                    msg.setData( bundle );
+                    bt_broadcaster.sendMessage( msg );
                 }
             }
         }

@@ -1,6 +1,7 @@
 package edu.princeton.presenterclient;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -18,33 +19,31 @@ public class MainPresenter extends Activity
         super.onCreate( savedInstanceState );
         this.requestWindowFeature(Window.FEATURE_NO_TITLE );
         setContentView( R.layout.main_presenter );
-        this.show_figure();
-        
+
         bluetooth_recv =
                 new BluetoothReceiver( bt_broadcaster );
         bluetooth_recv.start();
     }
 
 
-    private void show_figure(  )
+    private void show_figure( Bitmap img )
     {
         ImageView image = ( ImageView )
                 findViewById( R.id.slide_show );
-        image.setImageResource( R.drawable.fig_0 );
+        image.setImageBitmap( img );
     }
 
     private Handler bt_broadcaster = new Handler(  )
     {
         @Override
-        public void handleMessage(Message msg)
+        public void handleMessage( Message msg )
         {
             this.obtainMessage(  );
             switch( msg.what )
             {
                 case 738:
-                    Bundle bundle = msg.getData(  );
-                    String s = bundle.getString( "btprt" );
-                    Log.i( "btprt", s );
+                    Bitmap img = ( Bitmap ) msg.obj;
+                    show_figure( img );
                     break;
                 case -1:
                     Log.e( "btprt", "Restarting" );
