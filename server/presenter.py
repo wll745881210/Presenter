@@ -3,6 +3,8 @@
 from pylab import *
 from time       import sleep
 import bluetooth as bt
+from threading import Thread
+import pdb
 
 ############################################################
 
@@ -52,33 +54,103 @@ class slide_presenter_basic:
     #
 #
 
-def test_bluetooth(  ):
-    addr = 'F8:8F:CA:11:E9:59';
 
-    s = bt.BluetoothSocket( bt.RFCOMM );
-    
-    svc_dicts = bt.find_service\
-                ( address = addr,
-                  name = 'btprt' );
-    port = svc_dicts[ 0 ][ 'port' ];
-
-    s.connect( ( addr, port ) );
-
-    for i in arange( 5 ):
-        a = '';
-        with open( 'example_png/%d.png' % i, 'rb' ) as f:
-            a = f.read(  );
-        #
-        s.send( 'H' );
-        s.send( a );
-        print len( a );
-        sleep( 2 );
+class bt_trans: # ( Thread ):
+    def __init__( self ):
+        self.i           = 0;
+        self.send_socket = None;
+        self.serv_socket = None;
     #
 
-    s.close(  );
+    def build_send_socket( self ):
+        print "Building send socket...";
+        addr = 'F8:8F:CA:11:E9:59';
+        svc_dicts = bt.find_service\
+                    ( address = addr,
+                      name = 'btprt' );
+        port = svc_dicts[ 0 ][ 'port' ];
+        self.send_socket \
+            = bt.BluetoothSocket( bt.RFCOMM );
+        self.send_socket.connect( ( addr, port ) );
+        print "Done.";
+        return;
+    #
+
+    def send( self ):
+        a = '';
+        with open( 'example_png/%d.png' % self.i,\
+                   'rb' ) as f:
+            a = f.read(  );
+        #
+        self.send_socket.send( 'H' );
+        self.send_socket.send(  a  );
+        print len( a );
+        #
+        
+        self.i += 1;
+        if self.i > 4:
+            self.i = 0;
+
+        return;
+    #
+
+    def build_recv_socket( self ):
+        print "Building recv socket...";
+        self.serv_socket = bt.BluetoothSocket( bt.RFCOMM );
+        self.serv_socket.bind( ( "", bt.PORT_ANY ) );
+        self.serv_socket.listen( 1 );
+        uuid = '29919d10-6d44-11e4-9803-0800200c9a66';
+        bt.advertise_service\
+            ( self.serv_socket, "btflip", \
+              service_id = uuid );
+        self.recv_client_sock, client_info \
+            = self.serv_socket.accept(  );
+        print "Connection built on ", client_info;
+        return;
+    #
+
+    def run( self ):
+        while True:
+            try:
+                self.build_recv_socket(  );
+                self.build_send_socket(  );
+                break;
+            except:
+                continue;
+            #
+        #
+
+        while True:
+            try:
+                data = self.recv_client_sock.recv( 1024 );
+                self.send(  );
+            except:
+                while True:
+                    try:
+                        self.build_recv_socket(  );
+                        self.build_send_socket(  );
+                        break;
+                    except:
+                        continue;
+                    #
+                #
+            #
+        #
+
+        print "Close";
+        self.recv_client_sock.close(  );
+        
+        self.serv_socket.close(  );
+        self.send_socket.close(  );
+    #
+#
+
+    
 
 if __name__ == '__main__':
-    test_bluetooth(  );
+    t = bt_trans(  );
+    t.run(  );
+    
     
 
     
