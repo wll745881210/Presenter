@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -21,8 +20,8 @@ public class BluetoothReceiver extends Thread
     private UUID uuid = UUID.fromString
             ( "2B7ECB3A-71EE-4CDA-9D25-C287D6F957B6" );
 
-    private BluetoothAdapter bluetooth_adapter  = null;
-    private BluetoothServerSocket server_socket = null;
+//    private BluetoothAdapter   bluetooth_adapter = null;
+    private BluetoothServerSocket  server_socket = null;
 
     private static Handler bt_broadcaster;
     public BluetoothReceiver( Handler bt_broadcaster )
@@ -32,21 +31,28 @@ public class BluetoothReceiver extends Thread
 
     private void starter(  )
     {
-        bluetooth_adapter
+        BluetoothAdapter bluetooth_adapter
                 = BluetoothAdapter.getDefaultAdapter(  );
         if( ! bluetooth_adapter.isEnabled(  ) )
             bluetooth_adapter.enable();
-    }
-
-    private void listen(  )
-    {
-        Bundle bundle = new Bundle(  );
-
         try
         {
             server_socket = bluetooth_adapter.
                     listenUsingRfcommWithServiceRecord
-                            ( PROTOCOL_SCHEME_RFCOMM, uuid );
+                            (PROTOCOL_SCHEME_RFCOMM, uuid);
+        }
+        catch( IOException e )
+        {
+            Log.e( "btprt", "Connection is lost", e );
+            bt_broadcaster.sendEmptyMessage( -1 );
+        }
+
+    }
+
+    private void listen(  )
+    {
+        try
+        {
             BluetoothSocket socket =  server_socket.accept(  );
             Log.i("btprt", "Server sockect (re)started.");
             if( socket != null )
@@ -61,7 +67,6 @@ public class BluetoothReceiver extends Thread
                             ( iStream_fig );
                     msg.what = 738;
                     msg.obj  = img;
-                    msg.setData( bundle );
                     bt_broadcaster.sendMessage( msg );
                 }
             }
@@ -100,7 +105,7 @@ public class BluetoothReceiver extends Thread
     @Override
     public void run(  )
     {
-        starter();
-        listen();
+        starter(  );
+        listen(  );
     }
 }
