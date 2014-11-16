@@ -60,13 +60,25 @@ public class BluetoothReceiver extends Thread
                 InputStream iStream_fig
                         = socket.getInputStream(  );
 
-                while( iStream_fig.read( ) > -1 )
+                int flag = 0;
+                while( ( flag = iStream_fig.read( ) ) > -1 )
                 {
                     Message msg = Message.obtain(  );
-                    Bitmap img = BitmapFactory.decodeStream
-                            ( iStream_fig );
-                    msg.what = 738;
-                    msg.obj  = img;
+                    if( flag == 70 )    // ASCII 'F': Figure
+                    {
+                        Bitmap img = BitmapFactory.decodeStream
+                                (iStream_fig);
+                        msg.what = 738;
+                        msg.obj = img;
+                    }
+                    else if( flag == 84 )    // ASCII 'T': Text
+                    {
+                        byte[  ] buf = new byte[ 1024 ];
+                        iStream_fig.read( buf );
+                        String s = new String( buf, "UTF-8" );
+                        msg.what = 739;
+                        msg.obj  = s;
+                    }
                     bt_broadcaster.sendMessage( msg );
                 }
             }

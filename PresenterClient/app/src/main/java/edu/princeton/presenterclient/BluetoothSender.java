@@ -3,7 +3,6 @@ package edu.princeton.presenterclient;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.os.ParcelUuid;
 import android.util.Log;
 
 import java.io.IOException;
@@ -27,8 +26,6 @@ public class BluetoothSender
                 BluetoothAdapter.getDefaultAdapter(  );
         BluetoothDevice dev = bluetooth_adapter.
                 getRemoteDevice( "00:25:56:D0:3F:5C" );
-
-//        ParcelUuid[  ] uuids = dev.getUuids(  );
         try
         {
             UUID uuid = UUID.fromString

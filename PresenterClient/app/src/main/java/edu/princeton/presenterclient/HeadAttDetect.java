@@ -35,6 +35,8 @@ public class HeadAttDetect
         }
 
         private long t_last = 0;
+        private int counter = 0;
+
         @Override
         public void onSensorChanged( SensorEvent event )
         {
@@ -43,17 +45,23 @@ public class HeadAttDetect
             long t_this = event.timestamp;
 
             double theta = bow_down_degree(event.values);
-            if( theta < 30 )
+            if( theta < 20 )
+            {
                 t_last = t_this;
-            if( t_this - t_last < 5e8 )
+                counter = 0;
                 return;
-            else
-                t_last = t_this;
+            }
 
-            bundle.putDouble("ang", theta);
-            msg.what = 739;
-            msg.setData( bundle );
-            head_broadcaster.sendMessage( msg );
+            long dt = t_this - t_last;
+            if( dt > 2.5e8 )
+            {
+                ++ counter;
+                t_last = t_this;
+                bundle.putInt( "counter", counter );
+                msg.what = 739;
+                msg.setData(bundle);
+                head_broadcaster.sendMessage(msg);
+            }
         }
 
         private double bow_down_degree( float[  ] g )

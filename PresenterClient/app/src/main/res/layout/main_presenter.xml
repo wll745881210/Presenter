@@ -5,11 +5,42 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:weightSum="1">
+    <GridLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:rowCount="2"
+        android:columnCount="2"
+        >
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/slide_show"
-        />
+        <ImageView
+            android:layout_width="280dp"
+            android:layout_height="210dp"
+            android:layout_rowSpan="1"
+            android:id="@+id/slide_show"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/head_lines"
+            android:text="Headlines"
+            />
+
+        <ImageView
+            android:layout_width="280dp"
+            android:layout_height="20dp"
+            android:id="@+id/flipper"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/timer"
+            android:text="00:00"
+            />
+
+        </GridLayout>
+
+
 
 </LinearLayout>
