@@ -13,8 +13,9 @@ import android.widget.ImageView;
 public class MainPresenter extends Activity
 {
     private BluetoothReceiver bluetooth_recv = null;
+    private BluetoothSender   bluetooth_send = null;
     private HeadAttDetect     head_att_dect  = null;
-    private SensorManager     s_mngr          = null;
+    private SensorManager     s_mngr         = null;
 
     @Override
     public void onCreate( Bundle savedInstanceState )
@@ -26,9 +27,11 @@ public class MainPresenter extends Activity
         s_mngr = ( SensorManager )
                 getSystemService( SENSOR_SERVICE );
 
-//        bluetooth_recv =
-//                new BluetoothReceiver( bt_broadcaster );
-//        bluetooth_recv.start(  );
+        bluetooth_recv =
+                new BluetoothReceiver( bt_broadcaster );
+        bluetooth_recv.start(  );
+
+        bluetooth_send = new BluetoothSender(  );
     }
 
     @Override
@@ -91,6 +94,8 @@ public class MainPresenter extends Activity
                     Bundle bundle = msg.getData(  );
                     double theta = bundle.getDouble("ang");
                     Log.i( "sensor", Double.toString( theta ) );
+
+                    bluetooth_send.send( "Flip" );
                     break;
             }
         }
