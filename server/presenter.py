@@ -82,10 +82,16 @@ class bt_trans: # ( Thread ):
                    'rb' ) as f:
             a = f.read(  );
         #
-        self.send_socket.send( 'H' );
+        self.send_socket.send( 'F' );
         self.send_socket.send(  a  );
         print len( a );
+
+        with open( 'example_png/%d.txt' % self.i, 'r' ) \
+             as f:
+            a = f.read(  );
         #
+        self.send_socket.send( 'T' );
+        self.send_socket.send(  a  );
         
         self.i += 1;
         if self.i > 4:
