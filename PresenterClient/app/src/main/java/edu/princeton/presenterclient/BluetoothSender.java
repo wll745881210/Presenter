@@ -7,6 +7,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Set;
 import java.util.UUID;
 
 public class BluetoothSender
@@ -16,14 +17,20 @@ public class BluetoothSender
 
     public BluetoothSender(  )
     {
-//        Set<BluetoothDevice> bonded_dev
-//                = bluetooth_adapter.getBondedDevices();
+        BluetoothAdapter bluetooth_adapter =
+                BluetoothAdapter.getDefaultAdapter(  );
+        Set<BluetoothDevice> bonded_dev
+                = bluetooth_adapter.getBondedDevices(  );
+        for( BluetoothDevice d : bonded_dev )
+        {
+            String n = d.getName();
+            String a = d.getAddress();
+            Log.i( "btflip", n + " " + a );
+        }
 //        BluetoothDevice[  ] devices = ( BluetoothDevice[ ] )
 //                bonded_dev.toArray(  );
 //
 //        BluetoothDevice dev = devices[ 0 ];
-        BluetoothAdapter bluetooth_adapter =
-                BluetoothAdapter.getDefaultAdapter(  );
         BluetoothDevice dev = bluetooth_adapter.
                 getRemoteDevice( "00:25:56:D0:3F:5C" );
         try
