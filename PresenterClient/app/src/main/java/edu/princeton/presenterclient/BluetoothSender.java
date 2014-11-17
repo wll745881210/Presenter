@@ -23,7 +23,7 @@ public class BluetoothSender
         set_addr();
     }
 
-    private static String old_addr = "";
+    private static String old_addr = "00:25:56:D0:3F:5C";
     public void set_addr(  )
     {
         try
