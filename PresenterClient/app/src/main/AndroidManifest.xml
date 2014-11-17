@@ -18,6 +18,13 @@
                 android:name="com.google.android.glass.VoiceTrigger"
                 android:resource="@xml/voice_trigger" />
         </activity>
+
+
+        <activity android:label="@string/app_name"
+            android:name=".SetTimer"/>
+
+        <activity android:label="@string/app_name"
+            android:name=".SetAngle"/>
     </application>
 
     <uses-permission android:name="android.permission.BLUETOOTH" />

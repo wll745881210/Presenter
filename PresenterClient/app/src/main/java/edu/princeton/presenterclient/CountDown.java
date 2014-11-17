@@ -29,10 +29,9 @@ public class CountDown extends Thread
     public String ms_to_mmss( long dt )
     {
         dt = dt / 1000;
-        long mm = dt % 60;
+        long mm = dt / 60;
         long ss = dt - mm * 60;
-        String res = Long.toString( mm )
-                + ":" + Long.toString( ss );
+        String res = String.format( "%02d:%02d", mm, ss );
         return res;
     }
 
@@ -45,6 +44,7 @@ public class CountDown extends Thread
             Message msg = Message.obtain(  );
             msg.what = 740;
             msg.obj  = ms_to_mmss( time_remain );
+            countdown_broadcaster.sendMessage( msg );
             try
             {
                 sleep(1000);
