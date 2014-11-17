@@ -58,7 +58,7 @@ public class MainPresenter extends Activity
 
         count_down = new CountDown
                 ( countdown_broadcaster );
-        count_down.set_time( 1 );
+        count_down.set_time( 2 );
         count_down.start(  );
 
         head_att_dect  = new HeadAttDetect
