@@ -78,10 +78,10 @@ class bt_trans: # ( Thread ):
     #
 
     def send( self ):
-        self.i = self.i % 4;
+        self.i = self.i % 5;
         
         a = '';
-        with open( 'example_png/%d.png' % self.i,\
+        with open( 'example_png/fig-%d.png' % self.i,\
                    'rb' ) as f:
             a = f.read(  );
         #

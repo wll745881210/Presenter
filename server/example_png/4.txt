@@ -1,1 +1,4 @@
-4.png
+- Luminosity
+- Feeding rate
+- Diff energy
+- Strange tail
