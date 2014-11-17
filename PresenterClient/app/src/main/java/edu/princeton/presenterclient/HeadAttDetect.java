@@ -21,11 +21,15 @@ public class HeadAttDetect
         HeadAttDetect.s_mngr            = s_mngr;
         HeadAttDetect.s
                 = s_mngr.getDefaultSensor( Sensor.TYPE_GRAVITY );
-
     }
 
-    private class sListener implements
-            SensorEventListener
+    public int critical_angle = 20;
+    public void set_critical_angle( int ang )
+    {
+        this.critical_angle = ang;
+    }
+
+    private class sListener implements SensorEventListener
     {
         @Override
         public void onAccuracyChanged
@@ -46,7 +50,7 @@ public class HeadAttDetect
             long t_this = event.timestamp;
 
             double theta = bow_down_degree(event.values);
-            if( theta < 20 )
+            if( theta < critical_angle )
             {
                 t_last = t_this;
                 counter = 0;

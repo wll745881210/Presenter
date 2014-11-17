@@ -3,5 +3,6 @@
 
     <string name="app_name">PresenterClient</string>
     <string name="title_activity_main_presenter">Slides</string>
+    <string name="glass_voice_trigger">start presentation</string>
 
 </resources>

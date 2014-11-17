@@ -14,40 +14,41 @@ public class BluetoothSender
 {
     private BluetoothSocket client_socket = null;
     private OutputStream client_ostream = null;
+    private BluetoothAdapter bluetooth_adapter = null;
 
     public BluetoothSender(  )
     {
-        BluetoothAdapter bluetooth_adapter =
+        bluetooth_adapter =
                 BluetoothAdapter.getDefaultAdapter(  );
-        Set<BluetoothDevice> bonded_dev
-                = bluetooth_adapter.getBondedDevices(  );
-        for( BluetoothDevice d : bonded_dev )
-        {
-            String n = d.getName();
-            String a = d.getAddress();
-            Log.i( "btflip", n + " " + a );
-        }
-//        BluetoothDevice[  ] devices = ( BluetoothDevice[ ] )
-//                bonded_dev.toArray(  );
-//
-//        BluetoothDevice dev = devices[ 0 ];
-        BluetoothDevice dev = bluetooth_adapter.
-                getRemoteDevice( "00:25:56:D0:3F:5C" );
+        set_addr();
+    }
+
+    private static String old_addr = "";
+    public void set_addr(  )
+    {
         try
         {
-            UUID uuid = UUID.fromString
-                    ( "29919d10-6d44-11e4-9803-0800200c9a66" );
-            client_socket = dev.createRfcommSocketToServiceRecord
-                    ( uuid );
-            client_socket.connect(  );
-            client_ostream = client_socket.getOutputStream();
+            set_addr( old_addr );
         }
-        catch( IOException e )
+        catch ( Exception e )
         {
-            Log.e( "btflip", "Unable to start client" );
+            Log.e( "btflip", "Unable to set old_addr" );
         }
     }
 
+    public void set_addr( String addr ) throws IOException
+    {
+        BluetoothDevice dev = bluetooth_adapter.
+                getRemoteDevice( addr );
+        UUID uuid = UUID.fromString
+                ( "29919d10-6d44-11e4-9803-0800200c9a66" );
+        client_socket = dev.createRfcommSocketToServiceRecord
+                ( uuid );
+        client_socket.connect(  );
+        client_ostream = client_socket.getOutputStream();
+        Log.e( "btflip", "Unable to start client" );
+        BluetoothSender.old_addr = addr;
+    }
 
     public void send( String s )
     {
@@ -55,9 +56,20 @@ public class BluetoothSender
         {
             client_ostream.write( s.getBytes(  ) );
         }
-        catch( IOException e )
+        catch( Exception e )
         {
             Log.e("btprt", "Error sending string");
+        }
+    }
+    public void close(  )
+    {
+        try
+        {
+            client_socket.close();
+        }
+        catch( Exception e)
+        {
+            Log.e( "btflip", "Unable to close." );
         }
     }
 }

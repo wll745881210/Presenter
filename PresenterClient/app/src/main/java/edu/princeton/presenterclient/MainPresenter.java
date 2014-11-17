@@ -1,6 +1,10 @@
 package edu.princeton.presenterclient;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -12,9 +16,19 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SubMenu;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.google.android.glass.touchpad.Gesture;
+import com.google.android.glass.touchpad.GestureDetector;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class MainPresenter extends Activity
 {
@@ -23,6 +37,7 @@ public class MainPresenter extends Activity
     private HeadAttDetect     head_att_dect  = null;
     private SensorManager     s_mngr         = null;
     private CountDown         count_down     = null;
+    private GestureDetector   gesture        = null;
 
     @Override
     public void onCreate( Bundle savedInstanceState )
@@ -46,14 +61,18 @@ public class MainPresenter extends Activity
         count_down.set_time( 1 );
         count_down.start(  );
 
+        head_att_dect  = new HeadAttDetect
+                ( head_broadcaster, s_mngr );
+
+        this.get_bluetooth_paired();
+
+        gesture = create_gesture( this );
     }
 
     @Override
     public void onResume(  )
     {
         super.onResume(  );
-        head_att_dect  = new HeadAttDetect
-                ( head_broadcaster, s_mngr );
         head_att_dect.register(  );
     }
 
@@ -61,7 +80,6 @@ public class MainPresenter extends Activity
     public void onPause(  )
     {
         head_att_dect.unregister(  );
-        head_att_dect = null;
         super.onPause(  );
     }
 
@@ -76,9 +94,10 @@ public class MainPresenter extends Activity
             bluetooth_recv.finalize(  );
             bluetooth_recv = null;
 
+            bluetooth_send.close(  );
             bluetooth_send = null;
 
-            super.onPause(  );
+            super.finish(  );
         }
         catch( Throwable e )
         {
@@ -104,15 +123,52 @@ public class MainPresenter extends Activity
         return false;
     }
 
-    // Timer setting-up activity
+    // Setting-up activity
     private static final int menu_set_timer = Menu.FIRST;
+    private static final int menu_set_angle = Menu.FIRST + 1;
+    private static final int menu_set_bt    = Menu.FIRST + 10;
+    private Map<String, Integer> bonded_dev_idx
+            = new HashMap<String, Integer>();
+    private Map<Integer, String> bonded_dev_addr
+            = new HashMap<Integer, String>();
+
+
+    private void get_bluetooth_paired(  )
+    {
+        BluetoothAdapter bluetooth_adapter =
+                BluetoothAdapter.getDefaultAdapter(  );
+        Set<BluetoothDevice> bt_set
+                = bluetooth_adapter.getBondedDevices(  );
+
+        int id_current = menu_set_bt + 1;
+        for( BluetoothDevice d : bt_set )
+        {
+            String name = d.getName(  );
+            String addr = d.getAddress(  );
+            bonded_dev_idx.put( name, id_current );
+            bonded_dev_addr.put( id_current, addr );
+            ++ id_current;
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu( Menu menu )
     {
         super.onCreateOptionsMenu( menu );
-        menu.add( 0, menu_set_timer, 0,
-                "Set timer" );
+
+        menu.add(0, menu_set_timer, 0, "Set Timer");
+        menu.add(0, menu_set_angle, 0, "Set Critical Angle");
+
+        SubMenu bt_submenu = menu.addSubMenu
+                ( 0, menu_set_bt, 0, "Set Bluetooth" );
+
+        for( String name : bonded_dev_idx.keySet(  ) )
+        {
+            int id_this = bonded_dev_idx.get( name );
+            bt_submenu.addSubMenu( 0, id_this, 0, name );
+            Log.i( "btprt", name );
+        }
+
         return true;
     }
 
@@ -120,12 +176,38 @@ public class MainPresenter extends Activity
     public boolean onOptionsItemSelected( MenuItem item )
     {
         super.onOptionsItemSelected( item );
-        switch( item.getItemId(  ) )
+        int item_id = item.getItemId(  );
+
+        if( item_id == menu_set_timer)
         {
-            case menu_set_timer:
-                start_set_timer();
-                break;
+            start_set_timer();
         }
+        else if(  item_id == menu_set_angle )
+        {
+            start_set_angle();
+        }
+        else if( item_id == menu_set_bt )
+        {
+
+        }
+        else
+        {
+            String addr = bonded_dev_addr.get( item_id );
+            Log.i( "btprt", addr );
+            try
+            {
+                bluetooth_send.close(  );
+//                bluetooth_send = new BluetoothSender();
+                bluetooth_send.set_addr( addr );
+            }
+            catch( IOException e )
+            {
+                Log.e( "btprt", e.getMessage() );
+                return false;
+            }
+            show_alert( "Bluetooth connection succeeded!", addr );
+        }
+
         return true;
     }
 
@@ -136,8 +218,19 @@ public class MainPresenter extends Activity
         set_timer.setClass( MainPresenter.this,
                 SetTimer.class );
 
-        startActivityForResult( set_timer,
-                request_code_set_timer );
+        startActivityForResult(set_timer,
+                request_code_set_timer);
+    }
+
+    public static final int request_code_set_angle = 61;
+    private void start_set_angle(  )
+    {
+        Intent set_angle = new Intent(  );
+        set_angle.setClass( MainPresenter.this,
+                SetAngle.class );
+
+        startActivityForResult(set_angle,
+                request_code_set_angle);
     }
 
     @Override
@@ -148,15 +241,24 @@ public class MainPresenter extends Activity
         switch( requestCode )
         {
             case request_code_set_timer:
-                Bundle alti_info = intent.getExtras();
-                int min_left = alti_info.getInt( "min_left" );
+                Bundle timer_info = intent.getExtras();
+                int min_left = timer_info.getInt("min_left");
                 if( min_left > 0 )
                     count_down.set_time( min_left );
                 break;
+            case request_code_set_angle:
+                Bundle ang_info = intent.getExtras();
+                int ang = ang_info.getInt("critical_ang");
+                Log.i("angle_set", Integer.toString(ang));
+
+                if( ang > 0 )
+                    head_att_dect.set_critical_angle( ang );
+
+                break;
         }
     }
-    // Present
 
+    // Present
     private void show_figure( Bitmap img )
     {
         ImageView image = ( ImageView )
@@ -196,7 +298,6 @@ public class MainPresenter extends Activity
     }
 
     // Handlers of messages.
-
     private Handler bt_broadcaster = new Handler(  )
     {
         @Override
@@ -219,6 +320,7 @@ public class MainPresenter extends Activity
                     bluetooth_recv = null;
                     bluetooth_recv = new BluetoothReceiver( this );
                     bluetooth_recv.start(  );
+                    bluetooth_send.close(  );
                     bluetooth_send = null;
                     bluetooth_send = new BluetoothSender(  );
                     break;
@@ -242,7 +344,14 @@ public class MainPresenter extends Activity
 
                     if( ( counter > 4 ) && ( ! lock ) )
                     {
-                        bluetooth_send.send( "Forward" );
+                        try
+                        {
+                            bluetooth_send.send("Forward");
+                        }
+                        catch ( Exception e )
+                        {
+                            Log.e( "btprt", "Unable to send" );
+                        }
                         lock = true;
                         show_flip_prog( 5 );
                     }
@@ -279,4 +388,53 @@ public class MainPresenter extends Activity
             }
         }
     };
+
+    private void show_alert( String title, String msg )
+    {
+        AlertDialog alert ;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder
+                ( MainPresenter.this );
+        builder.setTitle( title );
+        builder.setCancelable( true );
+        builder.setMessage( msg );
+
+        alert = builder.create(  );
+        alert.show(  );
+    }
+
+
+    private GestureDetector create_gesture( Context context )
+    {
+        GestureDetector ret = new GestureDetector( context );
+        GestureDetector.BaseListener base = new
+                GestureDetector.BaseListener(  )
+                {
+                    @Override
+                    public boolean onGesture( Gesture gesture_loc )
+                    {
+                        if( gesture_loc == Gesture.SWIPE_LEFT )
+                        {
+                            bluetooth_send.send( "Backward" );
+                            return true;
+                        }
+                        else if( gesture_loc == Gesture.SWIPE_RIGHT )
+                        {
+                            bluetooth_send.send( "Forward" );
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+        ret.setBaseListener( base );
+        return ret;
+    }
+
+    @Override
+    public boolean onGenericMotionEvent( MotionEvent event )
+    {
+        if( gesture != null )
+            return gesture.onMotionEvent( event );
+        return false;
+    }
 }
