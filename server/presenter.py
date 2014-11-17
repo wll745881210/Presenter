@@ -73,10 +73,13 @@ class bt_trans: # ( Thread ):
             = bt.BluetoothSocket( bt.RFCOMM );
         self.send_socket.connect( ( addr, port ) );
         print "Done.";
+        self.send(  );
         return;
     #
 
     def send( self ):
+        self.i = self.i % 4;
+        
         a = '';
         with open( 'example_png/%d.png' % self.i,\
                    'rb' ) as f:
@@ -93,10 +96,6 @@ class bt_trans: # ( Thread ):
         self.send_socket.send( 'T' );
         self.send_socket.send(  a  );
         
-        self.i += 1;
-        if self.i > 4:
-            self.i = 0;
-
         return;
     #
 
@@ -129,6 +128,11 @@ class bt_trans: # ( Thread ):
         while True:
             try:
                 data = self.recv_client_sock.recv( 1024 );
+                if "Forward" in data:
+                    self.i += 1;
+                elif "Backward" in data:
+                    self.i -= 1;
+                #
                 self.send(  );
             except:
                 while True:
