@@ -20,21 +20,9 @@ public class BluetoothSender
     {
         bluetooth_adapter =
                 BluetoothAdapter.getDefaultAdapter(  );
-        set_addr();
     }
 
     private static String old_addr = "00:25:56:D0:3F:5C";
-    public void set_addr(  )
-    {
-        try
-        {
-            set_addr( old_addr );
-        }
-        catch ( Exception e )
-        {
-            Log.e( "btflip", "Unable to set old_addr" );
-        }
-    }
 
     public void set_addr( String addr ) throws IOException
     {

@@ -28,22 +28,27 @@ public class CountDown extends Thread
 
     public String ms_to_mmss( long dt )
     {
+        String sign = "-";
+        if( dt < 0 )
+        {
+            dt   = - dt;
+            sign = "+";
+        }
         dt = dt / 1000;
         long mm = dt / 60;
         long ss = dt - mm * 60;
         String res = String.format( "%02d:%02d", mm, ss );
-        return res;
+        return sign + res;
     }
 
     @Override
     public void run(  )
     {
-        long time_remain = 0;
-        while( ( time_remain = time_remain_ms() ) > -1 )
+        while( true )
         {
             Message msg = Message.obtain(  );
             msg.what = 740;
-            msg.obj  = ms_to_mmss( time_remain );
+            msg.obj = ms_to_mmss( time_remain_ms(  ) );
             countdown_broadcaster.sendMessage( msg );
             try
             {
