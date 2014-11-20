@@ -1,65 +1,69 @@
 #!/usr/bin/env python
 
-from pylab import *
-from time       import sleep
+from subprocess import Popen, PIPE
+
+from time        import sleep
 import bluetooth as bt
-from threading import Thread
+from threading   import Thread
+from pyscreenshot import grab, grab_to_file
+
+import sys
+import os
+import re
+
 import pdb
+
+# from impressive import *
 
 ############################################################
 
-class slide_presenter_basic:
-
-    def __init__( self, file_list = None ):
-
-        self.png_files = [];
-        self.contents  = {};
-        self.l         = 0;
-        self.i         = 0;
-        
-        if file_list != None:
-            self.set_file_list( file_list );
-        #
-        return;
-    #
-
-    # To be overriden by, e.g., org-mode parser
-    def set_file_list( self, file_list ):
-        for n in file_list:
-            self.png_files.append( n )
-            with open( n.replace( '.png', '.txt' ) ) as f:
-                self.contents[ n ] = f.readlines(  );
-            #
-        #
-        self.l = len( self.png_files );
-        return;
-    #
-
-    # To be overridden by a full-screen mode
-    def present_this( self ):
-        png_name = self.png_files[ self.i ];
-        img      = imread( png_name );
-        txt      = self.contents[ png_name ];
-        print txt;
-        imshow( img );
-        return;
-    #
-
-    def move_forward( self, n_forward = 1 ):
-        for n in n_forward:
-            self.i -= 1;
-            self.present_this(  );
-        #
-        return;
-    #
+def key_simulate( key ):
+    p = Popen( [ 'xte' ], stdin = PIPE );
+    p.communicate( input = 'key ' + key + '\n' );
+    return;
 #
 
+class bt_trans ( Thread ):
+    def __init__( self, txt_name ):
+        super( bt_trans, self ).__init__(  );
+        self.txt_name    = txt_name;
 
-class bt_trans: # ( Thread ):
-    def __init__( self ):
+        self.page_data   = 'Initial...';
         self.i           = 0;
         self.send_socket = None;
         self.serv_socket = None;
+
+        self.headlines = {  };
+        self.parse_txt(  );
+        # pdb.set_trace(  );
+    #
+
+    def parse_txt( self ):
+        with open( self.txt_name, 'r' ) as f:
+            data = f.readlines(  );
+        #
+
+        pat  = re.compile( r'(?<=SlideBegin)\d*' );
+        temp = '';
+        idx  = 0;
+        
+        for l in data:
+            if 'SlideBegin' in l:
+                temp = '';
+                try:
+                    idx = int( pat.search( l ).group(  ) );
+                except:
+                    idx = 0;
+                #
+            #
+            elif 'SlideEnd' in l:
+                self.headlines[ '%d' % idx ] = temp;
+            #
+            else:
+                temp = temp + l
+            #
+        #
+        return;
     #
 
     def build_send_socket( self ):
@@ -77,21 +81,33 @@ class bt_trans: # ( Thread ):
         return;
     #
 
-    def send( self ):
-        self.i = self.i % 5;
+    def send( self, i = -1 ):
+        if i > 0:
+            self.i = i;
+        #
+        else:
+            self.i = 1;
+        #
         
         a = '';
-        with open( 'example_png/fig-%d.png' % self.i,\
-                   'rb' ) as f:
+        file_name = 'temp_scr_shot.png';
+        grab_to_file( file_name );
+        cmd = 'convert %s -resize 280x140 %s' % \
+              ( file_name, file_name );
+        os.system( cmd );
+        with open( file_name, 'rb' ) as f:
             a = f.read(  );
         #
+
         self.send_socket.send( 'F' );
         self.send_socket.send(  a  );
         print len( a );
 
-        with open( 'example_png/%d.txt' % self.i, 'r' ) \
-             as f:
-            a = f.read(  );
+        a = 'Page %d\n' % self.i;
+        try:
+            a = a + self.headlines[ '%d' % self.i ];
+        except:
+            pass;
         #
         self.send_socket.send( 'T' );
         self.send_socket.send(  a  );
@@ -120,6 +136,8 @@ class bt_trans: # ( Thread ):
                 self.build_recv_socket(  );
                 self.build_send_socket(  );
                 break;
+            except KeyboardInterrupt:
+                break;
             except:
                 continue;
             #
@@ -129,16 +147,19 @@ class bt_trans: # ( Thread ):
             try:
                 data = self.recv_client_sock.recv( 1024 );
                 if "Forward" in data:
-                    self.i += 1;
+                    key_simulate( 'Right' );
                 elif "Backward" in data:
-                    self.i -= 1;
+                    key_simulate( 'Left' );
                 #
-                self.send(  );
+            except KeyboardInterrupt:
+                break;
             except:
                 while True:
                     try:
                         self.build_recv_socket(  );
                         self.build_send_socket(  );
+                        break;
+                    except KeyboardInterrupt:
                         break;
                     except:
                         continue;
@@ -155,11 +176,14 @@ class bt_trans: # ( Thread ):
     #
 #
 
-    
 
 if __name__ == '__main__':
-    t = bt_trans(  );
+    t = bt_trans( sys.argv[ 1 ] );
     t.run(  );
+
+    
+#
+    
     
     
 

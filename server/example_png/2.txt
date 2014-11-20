@@ -1,4 +1,0 @@
-- Luminosity
-- Feeding rate
-- Diff energy
-- Strange tail
